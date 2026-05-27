@@ -1,0 +1,12 @@
+packages:
+  - 'apps/*'
+
+# Opt out of delayed installs (pnpm v11 defaults to 1440 min). Required for Docker/CI
+# when the lockfile pins versions that were fresh at resolution time.
+minimumReleaseAge: 0
+
+# pnpm v11 blocks lifecycle scripts unless explicitly allowed (non-interactive Docker/CI).
+allowBuilds:
+  '@nestjs/core': true
+  '@prisma/engines': true
+  prisma: true

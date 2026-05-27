@@ -1,0 +1,29 @@
+FROM node:22-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+FROM base AS deps
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+RUN pnpm install --frozen-lockfile --filter api...
+
+FROM base AS build
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY apps/api/package.json ./apps/api/
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY apps/api/ ./apps/api/
+RUN pnpm --filter api run prisma:generate
+RUN pnpm --filter api build
+
+FROM node:22-alpine AS runner
+RUN apk add --no-cache libc6-compat
+WORKDIR /app
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=build /app/apps/api/dist ./apps/api/dist
+COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+COPY --from=build /app/apps/api/package.json ./apps/api/package.json
+ENV NODE_ENV=production
+EXPOSE 3030
+CMD ["node", "apps/api/dist/main.js"]

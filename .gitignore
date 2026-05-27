@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.env
+*.env.local
+.prisma
+routeTree.gen.ts
+*.db
+pnpm-lock.yaml
+
+.DS_Store
